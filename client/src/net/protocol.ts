@@ -1,0 +1,16 @@
+import type {Balance, Motion} from '../sim/movement.ts';
+import type {Team} from '../sim/coordinates.ts';
+export type Transition = {kind: 'begin' | 'release' | 'cancel'; actionId: number; mode?: 'kick' | 'tackle'; possessionVersion?: number; aimX?: number; aimY?: number};
+export type InputFrame = {inputSeq: number; targetTick: number; moveX: number; moveY: number; aimX: number; aimY: number; actionHeld: boolean; transitions: Transition[]};
+export type Identity = {roomId: string; matchId: string; connectionEpoch: string};
+export type Welcome = Identity & {type: 'welcome'; protocolVersion: number; playerId: string; team: Team; serverTick: number; balance: Balance; balanceHash: string};
+export type Phase = 'training' | 'countdown' | 'playing' | 'goalPause' | 'kickoff' | 'finished';
+export type Roster = {type: 'roomState'; roomId: string; matchId: string; code: string; phase: Phase; organizerId: string; players: {playerId: string; name: string; team: Team}[]};
+export type Player = Motion & {playerId: string; team: Team; preparing: boolean; actionId: number; chargeStartTick: number; active: boolean;
+  actionState: 'idle' | 'running' | 'preparing' | 'sliding' | 'recovering' | 'kicking' | 'celebrating'; preparationMode: '' | 'kick' | 'tackle';
+  slideX: number; slideY: number; slideEndTick: number; recoverEndTick: number; cooldownEndTick: number; lastActionId: number; prepareVersion: number; animationEndTick: number;
+  dribbleX: number; dribbleY: number; dribbleTargetX: number; dribbleTargetY: number; dribbleTurnStartTick: number; dribbleTurnEndTick: number};
+export type Ball = {x: number; y: number; vx: number; vy: number; state: 'free' | 'controlled' | 'kicked'; ownerId: string | null; possessionVersion: number;
+  captureBlockedUntilTick: number; ownerBlockedId: string | null; ownerBlockedUntilTick: number; impulseSeq: number};
+export type Recipient = {ackInputSeq: number; moveX: number; moveY: number; aimX: number; aimY: number; held: boolean; lastInputTick: number; barrier: number; needsResync: boolean};
+export type Snapshot = Identity & {protocolVersion: number; snapshotSeq: number; serverTick: number; phase: Phase; players: Player[]; recipient: Recipient; ball: Ball; score: [number, number]; remainingTime: number | null; phaseEndTick: number};

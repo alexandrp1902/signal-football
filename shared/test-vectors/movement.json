@@ -1,0 +1,7 @@
+[
+  {"name":"accelerate-right","initial":{"x":0,"y":0,"vx":0,"vy":0,"facingX":0,"facingY":1},"move":{"x":1,"y":0},"aim":{"x":0,"y":0},"steps":60,"expected":{"x":4.993333333333333,"y":0,"vx":5.6,"vy":0}},
+  {"name":"brake","initial":{"x":0,"y":0,"vx":5.6,"vy":0,"facingX":1,"facingY":0},"move":{"x":0,"y":0},"aim":{"x":0,"y":0},"steps":12,"expected":{"x":0.4766666666666667,"y":0,"vx":0,"vy":0}},
+  {"name":"analog-half","initial":{"x":0,"y":0,"vx":0,"vy":0,"facingX":0,"facingY":1},"move":{"x":0.5,"y":0},"aim":{"x":0,"y":1},"steps":60,"expected":{"x":2.66,"y":0,"vx":2.8,"vy":0}},
+  {"name":"wall-slide","initial":{"x":23.57,"y":0,"vx":5.6,"vy":0,"facingX":1,"facingY":0},"move":{"x":1,"y":1},"aim":{"x":0,"y":0},"steps":1,"expected":{"x":23.58,"y":0.006159196883367007,"vx":0,"vy":0.3695518130020204}},
+  {"name":"reverse","initial":{"x":0,"y":0,"vx":5.6,"vy":0,"facingX":1,"facingY":0},"move":{"x":-1,"y":0},"aim":{"x":0,"y":0},"steps":28,"expected":{"x":-0.093333333333333,"y":0,"vx":-5.6,"vy":0}}
+]

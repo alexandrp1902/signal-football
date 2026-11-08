@@ -1,0 +1,13 @@
+{
+  "schemaVersion":1, "tickRate":60, "inputRate":30, "snapshotRate":20,
+  "fieldWidth":48, "fieldHeight":80, "goalWidth":11.2, "goalDepth":2.4,
+  "playerRadius":0.42, "runSpeed":5.6, "acceleration":24, "braking":30,
+  "teamSize":3, "matchSeconds":180, "ballRadius":0.35, "ballVisualRadius":0.72, "postRadius":0.12,
+  "dribbleSpeedMultiplier":0.9, "dribbleTurnPauseSeconds":0.2, "dribbleTurnSeconds":0.15, "dribbleSteeringRadiansPerSecond":8,
+  "shotMoveMultiplier":0.85, "shotChargeSeconds":1, "shotMinSpeed":10, "shotMaxSpeed":24,
+  "captureMaxSpeed":6, "shotRecaptureSeconds":0.2, "dribbleDistance":1.1,
+  "tackleChargeSeconds":0.6, "tackleMinDistance":1.8, "tackleMaxDistance":3.2, "tackleSpeed":13,
+  "tackleReach":1.05, "tackleBallSpeed":8, "recoverySeconds":0.2, "cooldownSeconds":1.5,
+  "tackleRecaptureSeconds":0.15, "wallRestitution":0.75, "bodyRestitution":0.4,
+  "ballDrag":0.9, "reconnectSeconds":10
+}

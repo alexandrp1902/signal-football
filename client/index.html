@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#102538"><meta name="description" content="SIGNAL CATS — тестовая футбольная арена для двух игроков"><title>SIGNAL CATS · Football</title></head>
+<body><div id="app">
+  <section id="entry" class="entry">
+    <div class="brand"><span class="brand-mark">S</span> SIGNAL CATS <span class="edition">FOOTBALL</span></div>
+    <div class="entry-content"><div class="eyebrow">ПЕРВАЯ ТРЕНИРОВКА</div><h1>На поле.<br><span>Вместе.</span></h1>
+    <p class="intro">Две стороны. Одна арена.<br>Пригласите друга и испытайте управление.</p>
+    <div class="entry-match" role="img" aria-label="Синий котик бьёт по мячу, а красный котик бежит ему навстречу на футбольном поле">
+      <div class="entry-match-glow" aria-hidden="true"></div>
+      <div class="entry-match-pitch" aria-hidden="true"></div>
+      <div class="entry-player entry-player-blue" aria-hidden="true"><div class="entry-player-sprite"></div></div>
+      <div class="entry-player entry-player-red" aria-hidden="true"><div class="entry-player-sprite"></div></div>
+      <div class="entry-match-ball" aria-hidden="true">
+        <svg viewBox="0 0 64 64" fill="none">
+          <defs>
+            <radialGradient id="entry-ball-light" cx=".32" cy=".23" r=".8"><stop stop-color="#fff"/><stop offset=".6" stop-color="#e9f4f6"/><stop offset="1" stop-color="#7699a6"/></radialGradient>
+            <clipPath id="entry-ball-clip"><circle cx="32" cy="32" r="29"/></clipPath>
+          </defs>
+          <circle cx="32" cy="32" r="29" fill="url(#entry-ball-light)"/>
+          <g clip-path="url(#entry-ball-clip)" stroke="#527381" stroke-width=".8" stroke-linejoin="round">
+            <path d="m32 18 13 9-5 15H24l-5-15Z" fill="#102c3b"/>
+            <path d="m22 3 20 0-2 8H24ZM58 18l6 17-10 1-5-11ZM52 55l-16 9-2-11 13-7ZM12 55-1 40l10-4 9 12ZM3 16 16 3l5 12-9 10Z" fill="#173545"/>
+            <path d="M32 18 24 11M45 27l4-2M40 42l7 4M24 42l-6 6M19 27l-7-2M40 11l9 14M54 36l-7 10M34 53l-16-5M9 36l3-11M21 15l3-4"/>
+          </g>
+          <circle cx="32" cy="32" r="29" stroke="#b9dbe2" stroke-width="1.2"/>
+          <ellipse cx="23" cy="16" rx="10" ry="5" fill="#fff" opacity=".28" transform="rotate(-30 23 16)"/>
+        </svg>
+      </div>
+      <div class="entry-match-caption" aria-hidden="true"><span class="entry-team-blue">СИНИЕ</span><span class="entry-match-vs">×</span><span class="entry-team-red">КРАСНЫЕ</span></div>
+    </div>
+    <form id="join-form" class="join-card">
+      <label for="nickname">Как вас зовут?</label><input id="nickname" name="nickname" maxlength="64" placeholder="Ваш ник" autocomplete="nickname" value="Игрок">
+      <button id="create" class="primary" type="button">Создать тренировку <span class="button-icon" aria-hidden="true"></span></button>
+      <div class="divider"><span>или присоединиться</span></div>
+      <label for="room-code">Код комнаты</label><div class="join-row"><input id="room-code" name="room" placeholder="4 цифры" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"><button id="join" type="submit">Войти <span class="button-icon" aria-hidden="true"></span></button></div>
+    </form><p id="entry-status" class="entry-status" role="status"></p>
+    <p class="footnote">Можно играть одному или пригласить друга.<br>С мячом — удар, без мяча — подкат.</p></div>
+    <div class="pitch-decoration" aria-hidden="true"><div></div><i></i></div>
+  </section>
+  <section id="game" class="game" tabindex="0" hidden>
+    <div id="canvas-host"></div>
+    <header class="game-header"><div class="game-brand">SIGNAL <b>CATS</b><small>FOOTBALL / ТРЕНИРОВКА</small></div><button id="leave" class="icon-button" title="Выйти из комнаты" aria-label="Выйти из комнаты">↗</button></header>
+    <div class="room-bar"><button id="copy" title="Скопировать ссылку приглашения">КОМНАТА <b id="code">…</b> <span>⧉</span></button><span id="connection-status" role="status">Подключение…</span></div>
+    <div id="roster" class="roster"></div>
+    <div class="match-hud"><div class="score-board"><span class="blue">СИНИЕ</span><b id="blue-score">0</b><span class="score-divider">:</span><b id="red-score">0</b><span class="red">КРАСНЫЕ</span></div><span id="match-clock">Свободная игра</span><button id="start-match" hidden>Начать матч</button><button id="practice" hidden>К свободной игре</button></div>
+    <div id="match-message" class="match-message" hidden role="status"></div>
+    <div id="goal-pointer" class="goal-pointer" hidden>↑ ЧУЖИЕ ВОРОТА</div>
+    <div id="ball-pointer" class="ball-pointer" hidden></div>
+    <div id="action-hint" class="training-note">Подойдите к мячу, чтобы забрать его</div>
+    <div class="desktop-help">WASD / ↑↓←→ <span>движение</span> · ЛКМ <span>удар / подкат</span> · ESC <span>отмена</span></div>
+    <div id="left-stick" class="stick left-stick" aria-label="Стик движения"><div class="stick-cross"></div><div class="knob"><span>↕</span></div><span class="stick-label">ДВИЖЕНИЕ</span></div>
+    <div id="right-stick" class="stick right-stick" aria-label="Стик прицеливания"><div class="charge-ring"></div><div class="knob"><span>↗</span></div><span class="stick-label">ПРИЦЕЛ</span></div>
+    <button id="debug-toggle" class="debug-toggle" title="Диагностика">i</button><pre id="debug" hidden></pre>
+    <div id="disconnect" class="disconnect" hidden><div><h2>Тренировка на паузе</h2><p id="disconnect-status"></p><button id="back" class="primary">Вернуться ко входу</button></div></div>
+  </section>
+</div><script type="module" src="/src/main.ts"></script></body></html>

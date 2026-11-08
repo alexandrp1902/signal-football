@@ -1,0 +1,6 @@
+[
+  {"steps":12,"direction":{"x":1,"y":0},"move":{"x":-1,"y":0},"expected":{"x":1,"y":0,"planted":true}},
+  {"steps":13,"direction":{"x":1,"y":0},"move":{"x":-1,"y":0},"expected":{"x":0.9396926207859084,"y":0.3420201433256687,"planted":true}},
+  {"steps":21,"direction":{"x":1,"y":0},"move":{"x":-1,"y":0},"expected":{"x":-1,"y":0,"planted":true}},
+  {"steps":22,"direction":{"x":1,"y":0},"move":{"x":-1,"y":0},"expected":{"x":-1,"y":0,"planted":false}}
+]

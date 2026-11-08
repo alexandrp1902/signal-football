@@ -1,0 +1,8 @@
+[
+  {"tick":100,"frames":[{"inputSeq":1,"targetTick":100,"moveX":1,"moveY":0,"aimX":0,"aimY":1,"actionHeld":false,"transitions":[]}],"ack":1,"x":0.09333333333333333},
+  {"tick":101,"frames":[],"ack":1,"x":0.18666666666666668},
+  {"tick":102,"frames":[{"inputSeq":2,"targetTick":101,"moveX":-1,"moveY":0,"aimX":0,"aimY":1,"actionHeld":false,"transitions":[]},{"inputSeq":3,"targetTick":102,"moveX":1,"moveY":0,"aimX":0,"aimY":1,"actionHeld":false,"transitions":[]}],"ack":3,"x":0.28},
+  {"tick":103,"frames":[{"inputSeq":4,"targetTick":103,"moveX":0,"moveY":0,"aimX":0,"aimY":1,"actionHeld":false,"transitions":[]}],"ack":4,"x":0.365},
+  {"tick":104,"frames":[],"suspend":5,"ack":5,"x":0.365},
+  {"tick":105,"frames":[{"inputSeq":5,"targetTick":104,"moveX":1,"moveY":0,"aimX":0,"aimY":1,"actionHeld":false,"transitions":[]}],"ack":5,"x":0.365}
+]

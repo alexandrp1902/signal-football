@@ -1,0 +1,179 @@
+.entry-match {
+  position: absolute;
+  left: calc(100% + 40px);
+  top: 100px;
+  width: min(44vw, 680px);
+  aspect-ratio: 1.18;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.entry-match-glow {
+  position: absolute;
+  inset: 0 -10%;
+  background: radial-gradient(ellipse at 30% 55%, #00b8ff20, transparent 54%),
+    radial-gradient(ellipse at 75% 45%, #ff475817, transparent 50%);
+}
+
+.entry-match-pitch {
+  position: absolute;
+  inset: 40% -2% 5%;
+  border: 2px solid #83e5cf50;
+  border-radius: 20px;
+  background: repeating-linear-gradient(90deg, #256b5d80 0 16.66%, #20564e80 16.66% 33.33%);
+  box-shadow: 0 0 0 9px #71ddc409, 0 24px 64px #00152170, inset 0 0 45px #7aedcf0c;
+  transform: perspective(650px) rotateX(48deg) rotateZ(-9deg);
+}
+
+.entry-match-pitch::before {
+  content: '';
+  position: absolute;
+  inset: 15% 35%;
+  border: 2px solid #a5e9d94d;
+  border-radius: 50%;
+}
+
+.entry-match-pitch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 2px solid #a5e9d935;
+}
+
+.entry-player {
+  position: absolute;
+  width: 52%;
+  aspect-ratio: 1;
+}
+
+.entry-player::before {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 14%;
+  bottom: 1%;
+  height: 10%;
+  border-radius: 50%;
+  background: #001a28a6;
+  filter: blur(6px);
+}
+
+.entry-player-sprite {
+  position: absolute;
+  inset: 0;
+  background-image: url('/art/football-cats-v1.png');
+  background-size: 400% 400%;
+  background-repeat: no-repeat;
+  transform-origin: 50% 90%;
+  animation: entry-player-bob 3.8s ease-in-out infinite;
+}
+
+.entry-player-blue {
+  left: -2%;
+  top: 19%;
+  z-index: 2;
+}
+
+.entry-player-blue .entry-player-sprite {
+  background-position: 100% 0;
+  filter: drop-shadow(0 0 18px #00b8ff26);
+}
+
+.entry-player-red {
+  right: -2%;
+  top: 10%;
+  width: 49%;
+  transform: scaleX(-1);
+  z-index: 1;
+}
+
+.entry-player-red .entry-player-sprite {
+  background-position: 33.333333% 66.666667%;
+  filter: drop-shadow(0 0 18px #ff47581f);
+  animation-delay: -.8s;
+}
+
+.entry-match-ball {
+  position: absolute;
+  left: 48%;
+  top: 64%;
+  width: 12%;
+  aspect-ratio: 1;
+  z-index: 3;
+}
+
+.entry-match-ball::before {
+  content: '';
+  position: absolute;
+  inset: 75% 0 -4%;
+  border-radius: 50%;
+  background: #001521b3;
+  filter: blur(4px);
+}
+
+.entry-match-ball svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 12px #b7f6ff24);
+  animation: entry-ball-roll 3.8s ease-in-out infinite;
+}
+
+.entry-match-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.entry-team-blue { color: #56d5ff; }
+.entry-team-red { color: #ff8291; }
+.entry-match-vs { color: #8ca9b5; font-size: 18px; font-weight: 400; }
+
+@keyframes entry-player-bob {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-2%) rotate(1deg); }
+}
+
+@keyframes entry-ball-roll {
+  0%, 100% { transform: translateX(-12%) rotate(-16deg); }
+  50% { transform: translateX(18%) rotate(22deg); }
+}
+
+@media (max-width: 1100px) {
+  .entry-content { margin-left: auto; margin-right: auto; }
+  .entry-match {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    aspect-ratio: 1.8;
+    margin: -18px 0 30px;
+  }
+  .entry-player-blue { width: 43%; top: 0; left: 1%; }
+  .entry-player-red { width: 41%; top: -10%; right: 1%; }
+  .entry-match-pitch { inset: 32% 0 0; }
+  .entry-match-ball { width: 10%; left: 46%; top: 53%; }
+  .entry-match-caption { bottom: -12px; font-size: 8px; gap: 16px; }
+}
+
+@media (max-width: 600px) {
+  .entry-content { padding-top: 32px; }
+  .entry h1 { font-size: 54px; }
+  .entry .intro { margin: 18px 0 24px; }
+  .entry-match { margin-top: -8px; margin-bottom: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-player-sprite, .entry-match-ball svg { animation: none; }
+}

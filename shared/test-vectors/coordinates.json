@@ -1,0 +1,6 @@
+[
+  {"team":"blue","world":{"x":3,"y":-5},"teamPoint":{"x":3,"y":-5}},
+  {"team":"red","world":{"x":3,"y":-5},"teamPoint":{"x":3,"y":-5}},
+  {"team":"blue","world":{"x":0,"y":-20},"teamPoint":{"x":0,"y":-20}},
+  {"team":"red","world":{"x":0,"y":20},"teamPoint":{"x":0,"y":20}}
+]

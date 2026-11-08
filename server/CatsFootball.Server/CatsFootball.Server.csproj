@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../CatsFootball.Sim/CatsFootball.Sim.csproj" />
+    <PackageReference Include="MessagePack" Version="3.1.9" />
+    <Content Include="../../shared/football.json" Link="football.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
