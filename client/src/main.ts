@@ -120,7 +120,8 @@ function fixedStep(): void {
   controls.updateMouse();
   const model = controls.model, move = teamToWorld(model.move, welcome.team), aim = teamToWorld(model.aim, welcome.team);
   const transitions = model.takeTransitions().map(t => {
-    if (t.kind === 'begin') {prepMode=snapshot?.ball.ownerId===welcome!.playerId?'kick':'tackle';prepVersion=snapshot?.ball.possessionVersion??0;}
+    if (t.kind === 'begin') {prepMode=snapshot?.ball.ownerId===welcome!.playerId?'kick':'tackle';prepVersion=snapshot?.ball.possessionVersion??0;if(prepMode==='kick')scene.kickPreparing();}
+    if(t.kind==='release'&&prepMode==='kick')scene.kickReleased({x:t.aimX??aim.x,y:t.aimY??aim.y});
     return {...t,mode:prepMode,possessionVersion:prepVersion};
   });
   const f: InputFrame = {inputSeq: ++seq, targetTick: target++, moveX: move.x, moveY: move.y, aimX: aim.x, aimY: aim.y,
@@ -137,9 +138,8 @@ function frame(now: number): void {
   if (welcome && prediction && snapshot && !game.hidden) {
     const own = prediction.render(Math.min(elapsed, .1));
     const players = interpolation.sample(now);
-    if (!players.some(p => p.playerId === welcome!.playerId)) {
-      const mine = snapshot.players.find(p => p.playerId === welcome!.playerId); if (mine) players.push(mine);
-    }
+    const ownPlayer=snapshot.players.find(p=>p.playerId===welcome!.playerId),ownIndex=players.findIndex(p=>p.playerId===welcome!.playerId);
+    if(ownPlayer){if(ownIndex>=0)players[ownIndex]=ownPlayer;else players.push(ownPlayer);}
     const mine=snapshot.players.find(p=>p.playerId===welcome!.playerId),ownsBall=snapshot.ball.ownerId===welcome.playerId;
     const mode=ownsBall?'kick':'tackle',active=['training','playing'].includes(snapshot.phase);
     const cooldown=Math.max(0,((mine?.cooldownEndTick??0)-connection.serverTick)/60);
@@ -148,7 +148,7 @@ function frame(now: number): void {
     const charge=controls.model.preparing?Math.min(1,(now-controls.model.startMs)/(1000*(mode==='kick'?welcome.balance.shotChargeSeconds:welcome.balance.tackleChargeSeconds))):-1;
     let ball=interpolation.ball(now);
     if(ownsBall)ball={...snapshot.ball,x:own.x+prediction.dribble.x*welcome.balance.dribbleDistance,y:own.y+prediction.dribble.y*welcome.balance.dribbleDistance};
-    scene.draw(players,own,controls.model.aim,charge,Math.min(elapsed,.1),ball,mode);
+    scene.draw(players,own,controls.model.aim,charge,Math.min(elapsed,.1),ball,mode,connection.serverTick);
     el('right-stick').style.setProperty('--charge', `${Math.max(0, charge)}`);
     if(el('right-stick').dataset.mode!==mode){el('right-stick').dataset.mode=mode;el('right-stick').querySelector('.knob span')!.innerHTML=icons[mode];el('right-stick').querySelector('.stick-label')!.textContent=ownsBall?'УДАР':'ПОДКАТ';}
     el('right-stick').classList.toggle('cooldown',!ownsBall&&cooldown>0);

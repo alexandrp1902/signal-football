@@ -4,7 +4,10 @@ import type {Balance, Motion, Vec} from '../sim/movement.ts';
 import type {Ball, Player, Roster} from '../net/protocol.ts';
 import {RunningCat} from './runningCat.ts';
 import {RollingBall} from './rollingBall.ts';
-type CatNode = {root: Container; label: Text; sprite: Sprite; runner: RunningCat; time: number; previous: Vec | null};
+import {catFacing,type CatFacing,type CatView} from './catAnimation.ts';
+type CatNode = {root: Container; label: Text; sprite: Sprite; runner: RunningCat; runners:Map<CatView,RunningCat>;
+  facing:CatFacing; direction:Vec; lastState:string; kickAim:Vec; kickCharge:number; kickTime:number; kickActionId:number;
+  time: number; previous: Vec | null};
 export class Scene {
   readonly app = new Application();
   camera: Camera = {x: 0, y: 0, width: 390, height: 800, scale: 15};
@@ -14,6 +17,8 @@ export class Scene {
   private ballNode!: RollingBall;
   private nodes = new Map<string, CatNode>();
   private textures: Texture[] = [];
+  private directions: Texture[] = [];
+  private ownKickAim: Vec | null = null;
   private host: HTMLElement;
   private team: Team = 'blue';
   private balance!: Balance;
@@ -25,15 +30,22 @@ export class Scene {
     await this.app.init({resizeTo: this.host, resolution: Math.min(devicePixelRatio || 1, 2), autoDensity: true, antialias: true, background: '#143d38', preference: 'webgl'});
     this.host.append(this.app.canvas); this.entities.sortableChildren = true;
     this.app.stage.addChild(this.world, this.aim, this.entities);
-    const atlas = await Assets.load<Texture>(new URL('art/football-cats-v1.png', document.baseURI).href);
+    const [atlas,directions] = await Promise.all([
+      Assets.load<Texture>(new URL('art/football-cats-v1.png', document.baseURI).href),
+      Assets.load<Texture>(new URL('art/football-cats-directions-v1.png', document.baseURI).href),
+    ]);
     for(let row=0;row<4;row++)for(let col=0;col<4;col++){
       const x=Math.floor(col*atlas.width/4),y=Math.floor(row*atlas.height/4);
       this.textures.push(new Texture({source:atlas.source,frame:new Rectangle(x,y,Math.floor((col+1)*atlas.width/4)-x,Math.floor((row+1)*atlas.height/4)-y)}));
     }
+    for(let row=0;row<2;row++)for(let col=0;col<4;col++){
+      const x=Math.floor(col*directions.width/4),y=Math.floor(row*directions.height/2);
+      this.directions.push(new Texture({source:directions.source,frame:new Rectangle(x,y,Math.floor((col+1)*directions.width/4)-x,Math.floor((row+1)*directions.height/2)-y)}));
+    }
     this.ballNode=new RollingBall();this.entities.addChild(this.ballNode);
   }
   configure(balance: Balance, team: Team, id: string): void {
-    this.balance=balance;this.team=team;this.ownId=id;this.camera.y=0;
+    this.balance=balance;this.team=team;this.ownId=id;this.camera.y=0;this.ownKickAim=null;
     this.world.removeChildren().forEach(c=>c.destroy());
     for(const n of this.nodes.values())n.root.destroy({children:true});this.nodes.clear();
     const g=new Graphics(),b=balance,w=b.fieldWidth,h=b.fieldHeight;
@@ -52,12 +64,14 @@ export class Scene {
     this.world.addChild(g);
   }
   roster(roster:Roster):void{this.names=new Map(roster.players.map(p=>[p.playerId,p.name]));}
+  kickPreparing():void {this.ownKickAim=null;}
+  kickReleased(direction:Vec):void {this.ownKickAim={...direction};}
   aimAt(clientX:number,clientY:number):Vec{
     const r=this.host.getBoundingClientRect();
     const pos=screenToWorld({x:(clientX-r.left)*this.camera.width/r.width,y:(clientY-r.top)*this.camera.height/r.height},this.team,this.camera);
     return{x:pos.x-this.own.x,y:pos.y-this.own.y};
   }
-  draw(players:Player[],own:Motion,aim:Vec,charge:number,seconds:number,ball:Ball|null,ownMode:string):void{
+  draw(players:Player[],own:Motion,aim:Vec,charge:number,seconds:number,ball:Ball|null,ownMode:string,tick=0):void{
     if(!this.balance)return;this.own=own;
     const c=this.camera,b=this.balance;
     followPlayer(c,own,this.host.clientWidth,this.host.clientHeight);
@@ -72,10 +86,11 @@ export class Scene {
         const root=new Container(),color=player.team==='blue'?'#00b8ff':'#ff4758';
         root.addChild(new Graphics().ellipse(0,2,15,5).fill({color:'#071d25',alpha:.3}).ellipse(0,0,12,5).stroke({width:player.playerId===this.ownId?2:1,color}));
         const sprite=new Sprite(this.textures[player.team==='blue'?0:8]);sprite.anchor.set(.5,.94);sprite.width=sprite.height=68;root.addChild(sprite);
-        const runner=new RunningCat(this.textures[player.team==='blue'?0:8]);runner.visible=false;root.addChild(runner);
+        const runner=new RunningCat(this.directions[player.team==='blue'?0:4]);runner.visible=false;root.addChild(runner);
         const label=new Text({text:'',style:{fontFamily:'Segoe UI, Arial',fontSize:10,fontWeight:'600',fill:'#fff',stroke:{color:'#102538',width:3}}});
         label.anchor.set(.5,1);root.addChild(label);this.entities.addChild(root);
-        node={root,label,sprite,runner,time:0,previous:null};this.nodes.set(player.playerId,node);
+        node={root,label,sprite,runner,runners:new Map([[0,runner]]),facing:{view:0,mirror:1},direction:{x:0,y:-1},
+          lastState:'idle',kickAim:{x:0,y:1},kickCharge:0,kickTime:0,kickActionId:0,time:0,previous:null};this.nodes.set(player.playerId,node);
       }
       const mine=player.playerId===this.ownId;
       const state=mine&&charge>=0&&!['sliding','recovering','kicking','celebrating'].includes(player.actionState)?'preparing':player.actionState;
@@ -84,8 +99,33 @@ export class Scene {
       const running=speed>.2&&!['sliding','recovering','kicking','celebrating'].includes(state);
       const travelled=node.previous?Math.hypot(motion.x-node.previous.x,motion.y-node.previous.y):0;
       node.previous={x:motion.x,y:motion.y};
-      node.runner.visible=running;node.sprite.visible=!running;
-      if(running)node.runner.advance(travelled<.5?travelled:0,{x:motion.vx,y:motion.vy});else node.runner.reset();
+      const winding=state==='preparing'&&(mine?ownMode==='kick':player.preparationMode==='kick');
+      if(winding){
+        node.kickAim=mine?(charge<0&&this.ownKickAim?{...this.ownKickAim}:{...aim}):{x:player.facingX,y:player.facingY};
+        node.kickCharge=mine&&charge>=0?charge:tick>0?Math.max(0,Math.min(1,(tick-player.chargeStartTick)/(60*b.shotChargeSeconds))):1;
+      }
+      if(state==='kicking'&&(node.lastState!=='kicking'||node.kickActionId!==player.lastActionId)){
+        node.kickTime=0;node.kickActionId=player.lastActionId;
+        if(mine&&this.ownKickAim){node.kickAim={...this.ownKickAim};this.ownKickAim=null;}
+        else if(ball?.ownerBlockedId===player.playerId&&Math.hypot(ball.vx,ball.vy)>.1)node.kickAim={x:ball.vx,y:ball.vy};
+        else if(node.lastState!=='preparing')node.kickAim={x:player.facingX,y:player.facingY};
+      }
+      if(winding||state==='kicking')node.direction={...node.kickAim};
+      else if(running)node.direction={x:motion.vx,y:motion.vy};
+      node.facing=catFacing(node.direction,node.facing);
+      const articulated=running||winding||state==='kicking'||state==='idle';
+      if(articulated){
+        let runner=node.runners.get(node.facing.view);
+        if(!runner){runner=new RunningCat(this.directions[(player.team==='blue'?0:4)+node.facing.view],node.facing.view);runner.visible=false;node.runners.set(node.facing.view,runner);node.root.addChildAt(runner,2);}
+        if(runner!==node.runner){node.runner.visible=false;runner.copyGait(node.runner);node.runner=runner;}
+        node.runner.scale.x=node.facing.mirror;
+      }
+      node.runner.visible=articulated;node.sprite.visible=!articulated;
+      if(winding)node.runner.windup(node.kickCharge,node.direction);
+      else if(state==='kicking'){node.runner.strike(node.kickTime/.25,node.kickCharge,node.direction);node.kickTime+=seconds;}
+      else if(running)node.runner.advance(travelled<.5?travelled:0,{x:motion.vx,y:motion.vy});
+      else if(articulated)node.runner.stand(node.direction);else node.runner.reset();
+      node.lastState=state;
       let pose=0;
       if(state==='preparing'||state==='recovering')pose=4;
       if(state==='sliding')pose=5+(Math.floor(node.time*20)%2);

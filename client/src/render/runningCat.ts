@@ -1,32 +1,7 @@
 import {Container, MeshSimple, Texture} from 'pixi.js';
 import type {Vec} from '../sim/movement.ts';
-
-export function gaitPose(phase: number, direction: Vec, strength = 1) {
-  const length = Math.hypot(direction.x, direction.y) || 1;
-  const dx = direction.x / length, dy = direction.y / length;
-  const swing = Math.sin(phase), stride = -Math.cos(phase);
-  const foot = (swing: number, stride: number) => {
-    const lift = Math.max(0, swing);
-    return {
-      x: dx * stride * 5.5 * strength,
-      y: (-lift * 7.5 - dy * stride * 3) * strength,
-      angle: (-dx * stride * .38 + lift * .12) * strength,
-      scaleY: 1 - (lift * .1 + dy * stride * .08) * strength,
-    };
-  };
-  const bounce = 1 - Math.cos(phase * 2);
-  return {
-    left: foot(swing, stride), right: foot(-swing, -stride),
-    bodyX: swing * .6 * strength,
-    bodyY: -bounce * 1.7 * strength,
-    bodyAngle: (.07 * dx + swing * .035) * strength,
-    bodyScaleY: 1 - Math.cos(phase * 2) * .025 * strength,
-    headY: bounce * .45 * strength,
-    headAngle: (-.035 * dx - swing * .025) * strength,
-    leftArmAngle: stride * .42 * strength,
-    rightArmAngle: -stride * .42 * strength,
-  };
-}
+import {gaitPose,windupPose,strikePose,type CatView} from './catAnimation.ts';
+export {gaitPose} from './catAnimation.ts';
 
 /** A small articulated rig cut from the existing mascot, sharing its atlas texture. */
 export class RunningCat extends Container {
@@ -42,7 +17,7 @@ export class RunningCat extends Container {
   private headBaseY: number;
   private meshes: MeshSimple[];
 
-  constructor(idle: Texture) {
+  constructor(idle: Texture,view:CatView=0) {
     super();
     const size = 68;
     const leg = (left: number, right: number, hipLeft: number, hipRight: number) => {
@@ -65,11 +40,13 @@ export class RunningCat extends Container {
       mesh.position.set((joint.x - .5) * size, (joint.y - .79) * size);
       return mesh;
     };
-    this.leftLeg = leg(.30, .505, .37, .505);
-    this.rightLeg = leg(.505, .75, .52, .69);
+    this.leftLeg = view===1?leg(.37,.62,.44,.55):leg(.30,.505,.37,.505);
+    this.rightLeg = view===1?leg(.40,.68,.49,.62):leg(.505,.75,.52,.69);
     this.leftArm = part([.265,.78, .265,.69, .34,.59, .40,.565, .44,.63, .39,.78], {x:.38,y:.62});
     this.rightArm = part([.65,.585, .73,.61, .795,.70, .79,.78, .70,.78, .65,.68], {x:.70,y:.625});
-    const shirt = part([.40,.54, .65,.54, .71,.62, .72,.80, .33,.80, .35,.62], {x:.5,y:.79});
+    const shirt = part(view===1?[.30,.54,.8,.54,.8,.82,.30,.82]:[.40,.54, .65,.54, .71,.62, .72,.80, .33,.80, .35,.62], {x:.5,y:.79});
+    // The profile's near arm overlaps the chest in the artwork; keep that silhouette intact.
+    if(view===1)this.leftArm.visible=this.rightArm.visible=false;
     this.head = part([0,0, 1,0, 1,.58, 0,.58], {x:.54,y:.55});
     this.headBaseY = this.head.y;
     this.body.position.set(0, (.79 - .94) * size);
@@ -80,6 +57,18 @@ export class RunningCat extends Container {
   }
 
   reset(): void {this.phase = this.effort = 0;}
+
+  copyGait(other:RunningCat):void {this.phase=other.phase;this.effort=other.effort;}
+
+  stand(direction:Vec):void {this.reset();this.applyPose(gaitPose(0,this.localDirection(direction),0));}
+  windup(charge:number,direction:Vec):void {this.reset();this.applyPose(windupPose(charge,this.localDirection(direction)));}
+  strike(progress:number,charge:number,direction:Vec):void {this.reset();this.applyPose(strikePose(progress,charge,this.localDirection(direction)));}
+
+  private localDirection(direction:Vec):Vec {
+    const speed=Math.hypot(direction.x,direction.y);
+    if(Math.abs(direction.x)>speed*.2)this.scale.x=direction.x<0?-1:1;
+    return {x:direction.x*this.scale.x,y:direction.y};
+  }
 
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
     if(this.destroyed)return;
@@ -94,9 +83,11 @@ export class RunningCat extends Container {
     this.phase = (this.phase + travelled / 2.1 * Math.PI * 2) % (Math.PI * 2);
     this.effort = Math.min(1, this.effort + travelled / .3);
     const speed = Math.hypot(direction.x, direction.y);
-    if (Math.abs(direction.x) > speed * .2) this.scale.x = direction.x < 0 ? -1 : 1;
     const strength = this.effort * Math.min(1, .35 + speed / 5.6 * .65);
-    const pose = gaitPose(this.phase, {x:direction.x * this.scale.x,y:direction.y}, strength);
+    this.applyPose(gaitPose(this.phase,this.localDirection(direction),strength));
+  }
+
+  private applyPose(pose:ReturnType<typeof gaitPose>):void {
     const bodyBase = (.79-.94)*68, bodyScaleX = 1+(1-pose.bodyScaleY)*.5;
     const bodyCos = Math.cos(pose.bodyAngle), bodySin = Math.sin(pose.bodyAngle);
     [pose.left, pose.right].forEach((p, index) => {
