@@ -85,7 +85,7 @@ export class Scene {
       const travelled=node.previous?Math.hypot(motion.x-node.previous.x,motion.y-node.previous.y):0;
       node.previous={x:motion.x,y:motion.y};
       node.runner.visible=running;node.sprite.visible=!running;
-      if(running)node.runner.advance(travelled<.5?travelled:0,{x:motion.vx,y:motion.vy});
+      if(running)node.runner.advance(travelled<.5?travelled:0,{x:motion.vx,y:motion.vy});else node.runner.reset();
       let pose=0;
       if(state==='preparing'||state==='recovering')pose=4;
       if(state==='sliding')pose=5+(Math.floor(node.time*20)%2);

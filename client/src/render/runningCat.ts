@@ -1,60 +1,125 @@
-import {Container, Rectangle, Sprite, Texture} from 'pixi.js';
+import {Container, MeshSimple, Texture} from 'pixi.js';
 import type {Vec} from '../sim/movement.ts';
 
-export function gaitPose(phase: number, direction: Vec) {
+export function gaitPose(phase: number, direction: Vec, strength = 1) {
   const length = Math.hypot(direction.x, direction.y) || 1;
   const dx = direction.x / length, dy = direction.y / length;
-  const foot = (swing: number) => ({
-    x: dx * swing * 4,
-    y: -Math.max(0, swing) * 5 - dy * swing * 1.5,
-    angle: -swing * (.28 + .22 * Math.abs(dx)),
-    scaleY: 1 - dy * swing * .08,
-  });
-  const swing = Math.sin(phase);
-  return {left: foot(swing), right: foot(-swing), bodyY: -swing * swing, bodyAngle: .018 * swing - .025 * dx};
+  const swing = Math.sin(phase), stride = -Math.cos(phase);
+  const foot = (swing: number, stride: number) => {
+    const lift = Math.max(0, swing);
+    return {
+      x: dx * stride * 5.5 * strength,
+      y: (-lift * 7.5 - dy * stride * 3) * strength,
+      angle: (-dx * stride * .38 + lift * .12) * strength,
+      scaleY: 1 - (lift * .1 + dy * stride * .08) * strength,
+    };
+  };
+  const bounce = 1 - Math.cos(phase * 2);
+  return {
+    left: foot(swing, stride), right: foot(-swing, -stride),
+    bodyX: swing * .6 * strength,
+    bodyY: -bounce * 1.7 * strength,
+    bodyAngle: (.07 * dx + swing * .035) * strength,
+    bodyScaleY: 1 - Math.cos(phase * 2) * .025 * strength,
+    headY: bounce * .45 * strength,
+    headAngle: (-.035 * dx - swing * .025) * strength,
+    leftArmAngle: stride * .42 * strength,
+    rightArmAngle: -stride * .42 * strength,
+  };
 }
 
-/** Articulates the actual two paws from the existing mascot art, rather than swapping near-identical poses. */
+/** A small articulated rig cut from the existing mascot, sharing its atlas texture. */
 export class RunningCat extends Container {
-  readonly leftLeg: Sprite;
-  readonly rightLeg: Sprite;
-  readonly body: Sprite;
+  readonly leftLeg: MeshSimple;
+  readonly rightLeg: MeshSimple;
+  readonly body = new Container();
+  readonly head: MeshSimple;
+  readonly leftArm: MeshSimple;
+  readonly rightArm: MeshSimple;
   private phase = 0;
-  private bases: {x: number; y: number}[];
-  private legScale: number[];
+  private effort = 0;
+  private legVertices: Float32Array[];
+  private headBaseY: number;
+  private meshes: MeshSimple[];
 
   constructor(idle: Texture) {
     super();
-    const size = 68, frame = idle.frame, scale = size / frame.width;
-    const crop = (left: number, top: number, right: number, bottom: number) => {
-      const x = Math.floor(frame.x + frame.width * left), y = Math.floor(frame.y + frame.height * top);
-      return new Texture({source: idle.source, frame: new Rectangle(x, y, Math.floor(frame.x + frame.width * right) - x, Math.floor(frame.y + frame.height * bottom) - y)});
+    const size = 68;
+    const leg = (left: number, right: number, hipLeft: number, hipRight: number) => {
+      const points = [hipLeft,.73,hipRight,.73, left,.82,right,.82, left,.90,right,.90, left,.975,right,.975];
+      const vertices = points.map((v,i)=>(v-(i%2?.94:.5))*size);
+      const indices: number[] = [];
+      for(let row=0;row<3;row++){const i=row*2;indices.push(i,i+1,i+2,i+1,i+3,i+2);}
+      const mesh = new MeshSimple({texture:idle,vertices:new Float32Array(vertices),uvs:new Float32Array(points),indices:new Uint32Array(indices)});
+      mesh.autoUpdate = false;
+      return mesh;
     };
-    const leg = (left: number, right: number) => {
-      const sprite = new Sprite(crop(left, .77, right, .975));
-      sprite.anchor.set(.5, 0); sprite.scale.set(scale);
-      sprite.position.set(((left + right) / 2 - .5) * size, (.77 - .94) * size);
-      return sprite;
+    // Convex cutouts follow the shoulders; overlaps sit underneath the shirt/head.
+    // Geometry clips the source artwork without masks, filters or new bitmap assets.
+    const part = (points: number[], joint: Vec) => {
+      const vertices = points.map((v, i) => (v - (i % 2 ? joint.y : joint.x)) * size);
+      const indices: number[] = [];
+      for (let i = 1; i < points.length / 2 - 1; i++) indices.push(0, i, i + 1);
+      const mesh = new MeshSimple({texture: idle, vertices: new Float32Array(vertices), uvs: new Float32Array(points), indices: new Uint32Array(indices)});
+      mesh.autoUpdate = false;
+      mesh.position.set((joint.x - .5) * size, (joint.y - .79) * size);
+      return mesh;
     };
-    this.leftLeg = leg(.28, .505);
-    this.rightLeg = leg(.505, .75);
-    this.body = new Sprite(crop(0, 0, 1, .82));
-    this.body.scale.set(scale); this.body.position.set(-size / 2, -.94 * size);
-    this.bases = [this.leftLeg.position.clone(), this.rightLeg.position.clone()];
-    this.legScale = [this.leftLeg.scale.y, this.rightLeg.scale.y];
+    this.leftLeg = leg(.30, .505, .37, .505);
+    this.rightLeg = leg(.505, .75, .52, .69);
+    this.leftArm = part([.265,.78, .265,.69, .34,.59, .40,.565, .44,.63, .39,.78], {x:.38,y:.62});
+    this.rightArm = part([.65,.585, .73,.61, .795,.70, .79,.78, .70,.78, .65,.68], {x:.70,y:.625});
+    const shirt = part([.40,.54, .65,.54, .71,.62, .72,.80, .33,.80, .35,.62], {x:.5,y:.79});
+    this.head = part([0,0, 1,0, 1,.58, 0,.58], {x:.54,y:.55});
+    this.headBaseY = this.head.y;
+    this.body.position.set(0, (.79 - .94) * size);
+    this.body.addChild(this.leftArm, this.rightArm, shirt, this.head);
+    this.meshes = [this.leftLeg, this.rightLeg, this.leftArm, this.rightArm, shirt, this.head];
+    this.legVertices = [new Float32Array(this.leftLeg.vertices), new Float32Array(this.rightLeg.vertices)];
     this.addChild(this.leftLeg, this.rightLeg, this.body);
   }
 
+  reset(): void {this.phase = this.effort = 0;}
+
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    if(this.destroyed)return;
+    const geometry=this.meshes.map(mesh=>mesh.geometry);
+    super.destroy(options);
+    for(const part of geometry)part.destroy();
+  }
+
   advance(distance: number, direction: Vec): void {
-    // One full left/right stride per 2.1 metres. Standing and turning do not advance the gait.
-    this.phase = (this.phase + Math.min(.5, Math.max(0, distance)) / 2.1 * Math.PI * 2) % (Math.PI * 2);
-    const pose = gaitPose(this.phase, direction);
+    const travelled = Math.min(.5, Math.max(0, distance));
+    // One stride per 2.1 metres; corrections and turning in place do not add steps.
+    this.phase = (this.phase + travelled / 2.1 * Math.PI * 2) % (Math.PI * 2);
+    this.effort = Math.min(1, this.effort + travelled / .3);
+    const speed = Math.hypot(direction.x, direction.y);
+    if (Math.abs(direction.x) > speed * .2) this.scale.x = direction.x < 0 ? -1 : 1;
+    const strength = this.effort * Math.min(1, .35 + speed / 5.6 * .65);
+    const pose = gaitPose(this.phase, {x:direction.x * this.scale.x,y:direction.y}, strength);
+    const bodyBase = (.79-.94)*68, bodyScaleX = 1+(1-pose.bodyScaleY)*.5;
+    const bodyCos = Math.cos(pose.bodyAngle), bodySin = Math.sin(pose.bodyAngle);
     [pose.left, pose.right].forEach((p, index) => {
-      const sprite = index === 0 ? this.leftLeg : this.rightLeg, base = this.bases[index];
-      sprite.position.set(base.x + p.x, base.y + p.y); sprite.rotation = p.angle;
-      sprite.scale.y = this.legScale[index] * p.scaleY;
+      const mesh = index === 0 ? this.leftLeg : this.rightLeg, base = this.legVertices[index];
+      const vertices = mesh.vertices, hip = (.73-.94)*68, ankle = (.90-.94)*68;
+      const centre = (base[base.length-4]+base[base.length-2])/2;
+      // Keep the hip attached, bend through the knee and roll the shoe at the ankle.
+      for(let i=0;i<base.length;i+=2){
+        const x=base[i],y=base[i+1],weight=Math.min(1,Math.max(0,(y-hip)/(ankle-hip)));
+        const bend=weight*weight*(3-2*weight),toe=Math.max(0,(y-ankle)/((.975-.90)*68));
+        const angle=p.angle*toe,rx=x-centre,ry=y-ankle;
+        const bodyX=x*bodyScaleX*bodyCos-(y-bodyBase)*pose.bodyScaleY*bodySin+pose.bodyX;
+        const bodyY=x*bodyScaleX*bodySin+(y-bodyBase)*pose.bodyScaleY*bodyCos+bodyBase+pose.bodyY;
+        vertices[i]=x+(bodyX-x)*(1-bend)+p.x*bend+(rx*Math.cos(angle)-ry*Math.sin(angle)-rx)*toe;
+        vertices[i+1]=y+(bodyY-y)*(1-bend)+p.y*bend+(p.scaleY-1)*(y-hip)*bend+(rx*Math.sin(angle)+ry*Math.cos(angle)-ry)*toe;
+      }
+      mesh.geometry.getBuffer('aPosition').update();
     });
-    this.body.y = -.94 * 68 + pose.bodyY;
+    this.setChildIndex(this.leftLeg, pose.left.y > pose.right.y ? 1 : 0);
+    this.body.position.set(pose.bodyX, bodyBase + pose.bodyY);
     this.body.rotation = pose.bodyAngle;
+    this.body.scale.set(bodyScaleX, pose.bodyScaleY);
+    this.head.y = this.headBaseY + pose.headY; this.head.rotation = pose.headAngle;
+    this.leftArm.rotation = pose.leftArmAngle; this.rightArm.rotation = pose.rightArmAngle;
   }
 }

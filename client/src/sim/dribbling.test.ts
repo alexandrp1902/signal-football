@@ -21,10 +21,35 @@ it('late turn changes stay bounded and releasing movement preserves the ball sid
 });
 it('actual paws alternate and gait depends on distance at any render frame rate',()=>{
   const pose=gaitPose(Math.PI/2,{x:1,y:0}),opposite=gaitPose(Math.PI*1.5,{x:1,y:0});
-  expect(pose.left.y).toBeLessThan(pose.right.y);expect(pose.left).toEqual(opposite.right);
+  expect(pose.left.y).toBeLessThan(pose.right.y);
+  for(const key of ['x','y','angle','scaleY'] as const)expect(pose.left[key]).toBeCloseTo(opposite.right[key],10);
   const texture=new Texture({source:new TextureSource({width:314,height:314}),frame:new Rectangle(0,0,314,314)});
   const run=(frames:number)=>{const cat=new RunningCat(texture);for(let i=0;i<frames;i++)cat.advance(.525/frames,{x:0,y:1});return cat;};
   const a=run(30),b=run(120);
-  expect(a.leftLeg.y).toBeCloseTo(b.leftLeg.y,9);expect(a.rightLeg.y).toBeCloseTo(b.rightLeg.y,9);
-  expect(a.leftLeg.y).toBeLessThan(a.rightLeg.y);const y=a.leftLeg.y;a.advance(0,{x:0,y:1});expect(a.leftLeg.y).toBe(y);
+  for(const leg of ['leftLeg','rightLeg'] as const)for(let i=0;i<a[leg].vertices.length;i++)expect(a[leg].vertices[i]).toBeCloseTo(b[leg].vertices[i],6);
+  expect(a.leftLeg.vertices.at(-1)!).toBeLessThan(a.rightLeg.vertices.at(-1)!);
+  const vertices=[...a.leftLeg.vertices];a.advance(0,{x:0,y:1});expect([...a.leftLeg.vertices]).toEqual(vertices);
+});
+it('running bends the legs while their hips stay attached to the moving torso',()=>{
+  const texture=new Texture({source:new TextureSource({width:314,height:314}),frame:new Rectangle(0,0,314,314)});
+  const cat=new RunningCat(texture);
+  const hips=[cat.leftLeg,cat.rightLeg].map(leg=>({x:leg.vertices[0],y:leg.vertices[1]-cat.body.y}));
+  cat.advance(.35,{x:5.6,y:0});cat.body.updateLocalTransform();
+  for(const [i,leg]of [cat.leftLeg,cat.rightLeg].entries()){
+    const attached=cat.body.localTransform.apply(hips[i]);
+    expect(leg.vertices[0]).toBeCloseTo(attached.x,5);expect(leg.vertices[1]).toBeCloseTo(attached.y,5);
+    expect([...leg.vertices].every(Number.isFinite)).toBe(true);
+  }
+  expect(cat.leftArm.rotation).toBeCloseTo(-cat.rightArm.rotation,10);
+  expect(cat.head.rotation*cat.body.rotation).toBeLessThan(0);
+});
+it('running turns toward movement and restarts gently after stopping',()=>{
+  const texture=new Texture({source:new TextureSource({width:314,height:314}),frame:new Rectangle(0,0,314,314)});
+  const cat=new RunningCat(texture),fresh=new RunningCat(texture);
+  cat.advance(.3,{x:-5.6,y:0});expect(cat.scale.x).toBe(-1);
+  cat.advance(.3,{x:5.6,y:0});expect(cat.scale.x).toBe(1);
+  cat.reset();cat.advance(.1,{x:5.6,y:0});fresh.advance(.1,{x:5.6,y:0});
+  expect([...cat.leftLeg.vertices]).toEqual([...fresh.leftLeg.vertices]);
+  expect(cat.body.rotation).toBe(fresh.body.rotation);
+  cat.destroy({children:true});expect(texture.destroyed).toBe(false);
 });

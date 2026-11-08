@@ -100,11 +100,18 @@ public sealed class FootballTests
         Assert.Null(g.World.Ball.OwnerId);Assert.Equal("kicked",g.World.Ball.State);Assert.InRange(g.World.Ball.Velocity.Length,23,24);Assert.Equal(1,g.World.Ball.ImpulseSeq);
         g.Release(p);Assert.Equal(1,g.World.Ball.ImpulseSeq);Assert.Equal(0,p.SlideRemaining);
     }
-    [Fact] public void TackleTravelsItsChargedRangeThenRecoversAndRetainsCooldown()
+    [Theory] [InlineData(0)] [InlineData(18)] [InlineData(36)]
+    public void TackleTravelsTwentyPercentFartherBySlidingLongerAtTheSameSpeed(int heldTicks)
     {
-        var g=new Game();var p=g.Add("a","blue",-5,0);g.World.Ball.Position=new(8,8);g.Begin(p,new(1,0));g.Step(36);g.Release(p);
+        var g=new Game();var p=g.Add("a","blue",-5,0);g.World.Ball.Position=new(8,8);g.Begin(p,new(1,0));g.Step(heldTicks);
+        var startTick=g.Tick;g.Release(p);
+        var charge=Math.Clamp((heldTicks+1)/60.0/Config.TackleChargeSeconds,0,1);
+        var expectedRange=(1.8+(3.2-1.8)*charge)*1.2;
+        Assert.Equal(13,p.Velocity.Length,8);
         for(var i=0;i<30&&p.Sliding;i++)g.Step();
-        Assert.False(p.Sliding);Assert.InRange(p.Motion.X,-1.80001,-1.79999);Assert.True(p.RecoverEndTick>g.Tick);Assert.True(p.CooldownEndTick>g.Tick);
+        Assert.False(p.Sliding);Assert.Equal(-5+expectedRange,p.Motion.X,8);
+        Assert.Equal((int)Math.Ceiling(expectedRange/13*60),g.Tick-startTick);
+        Assert.True(p.RecoverEndTick>g.Tick);Assert.True(p.CooldownEndTick>g.Tick);
         var position=p.Position;g.Move(p,new(1,0));g.Step(5);Assert.Equal(position,p.Position);
     }
     [Theory]

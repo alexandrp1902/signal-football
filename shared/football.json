@@ -6,7 +6,7 @@
   "dribbleSpeedMultiplier":0.9, "dribbleTurnPauseSeconds":0.2, "dribbleTurnSeconds":0.15, "dribbleSteeringRadiansPerSecond":8,
   "shotMoveMultiplier":0.85, "shotChargeSeconds":1, "shotMinSpeed":10, "shotMaxSpeed":24,
   "captureMaxSpeed":6, "shotRecaptureSeconds":0.2, "dribbleDistance":1.1,
-  "tackleChargeSeconds":0.6, "tackleMinDistance":1.8, "tackleMaxDistance":3.2, "tackleSpeed":13,
+  "tackleChargeSeconds":0.6, "tackleMinDistance":2.16, "tackleMaxDistance":3.84, "tackleSpeed":13,
   "tackleReach":1.05, "tackleBallSpeed":8, "recoverySeconds":0.2, "cooldownSeconds":1.5,
   "tackleRecaptureSeconds":0.15, "wallRestitution":0.75, "bodyRestitution":0.4,
   "ballDrag":0.9, "reconnectSeconds":10
