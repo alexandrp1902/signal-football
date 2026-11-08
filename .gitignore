@@ -6,3 +6,18 @@
 client/test-results/
 client/playwright-report/
 *.user
+
+# Private operational material and local reports are kept outside the public source.
+/tools/deploy.ps1
+/tools/hosting/
+/docs/sessions/
+/docs/protocol-v1.md
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.pfx
+*.p12
+*.log

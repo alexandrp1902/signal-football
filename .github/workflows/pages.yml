@@ -29,10 +29,15 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
       - run: npm ci
+      - name: Check public content
+        run: node ../tools/check-publication.mjs
       - run: npm test
-      - run: npm run build
+      - name: Build client
+        run: |
+          test -n "$VITE_GAME_SERVER_URL" || { echo "Game server build setting is missing"; exit 1; }
+          npm run build
         env:
-          VITE_GAME_SERVER_URL: https://game.example.test
+          VITE_GAME_SERVER_URL: ${{ vars.GAME_SERVER_URL }}
       - uses: actions/upload-pages-artifact@v4
         with:
           path: client/dist

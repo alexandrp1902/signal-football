@@ -44,7 +44,7 @@ test('two independent browsers join, render the pitch, aim, cancel and leave', a
   await second.mouse.up(); await second.evaluate(() => window.dispatchEvent(new Event('focus')));
   await expect(second.locator('#game')).toHaveAttribute('data-running', 'true');
   await second.waitForTimeout(300); await expect(second.locator('#disconnect')).toBeHidden();
-  await second.screenshot({path: fileURLToPath(new URL('../../docs/sessions/02-desktop.png', import.meta.url))});
+  await second.screenshot({path: fileURLToPath(new URL('../../.local/browser/02-desktop.png', import.meta.url))});
   await second.locator('#leave').click(); await expect(second.locator('#entry')).toBeVisible();
   expect(errors).toEqual([]); await secondContext.close();
 });
@@ -70,7 +70,7 @@ test('two captured fingers remain independent; third finger and cancellation do 
   await cdp.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [left]});
   await cdp.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [left, right]});
   await expect(page.locator('#game')).toHaveAttribute('data-preparing', 'true');
-  await page.screenshot({path: fileURLToPath(new URL('../../docs/sessions/02-mobile-emulation.png', import.meta.url))});
+  await page.screenshot({path: fileURLToPath(new URL('../../.local/browser/02-mobile-emulation.png', import.meta.url))});
   const third = {x: r.x + r.width / 2 + 10, y: r.y + r.height / 2, id: 3};
   await cdp.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [left, right, third]});
   await cdp.send('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{...left, x: left.x - 100}, right, third]});
@@ -113,7 +113,7 @@ test('solo play has a visible ball, capture, charged kick, slide, goal and an op
   await expect(page.locator('#game')).toHaveAttribute('data-phase','playing',{timeout:8000});
   expect(received.at(-1)!.players).toHaveLength(1);expect(received.at(-1)!.score).toEqual([0,0]);
   await expect(page.locator('#disconnect')).toBeHidden();
-  await page.screenshot({path:fileURLToPath(new URL('../../docs/sessions/02-solo-match.png',import.meta.url))});
+  await page.screenshot({path:fileURLToPath(new URL('../../.local/browser/02-solo-match.png',import.meta.url))});
 });
 
 test('carrying follows running direction, slows to ninety percent and plants feet before reversing',async({page})=>{
@@ -141,7 +141,7 @@ test('carrying follows running direction, slows to ninety percent and plants fee
   expect(west.ball.ownerId).toBe(id);expect(west.ball.x-actor.x).toBeCloseTo(-1.1,5);
   expect(received.every(s=>{const p=s.players.find(p=>p.playerId===id);return s.ball.ownerId!==id||!p||Math.hypot(p.vx,p.vy)<=5.040001;})).toBe(true);
   await expect(page.locator('#disconnect')).toBeHidden();expect(errors).toEqual([]);
-  await page.screenshot({path:fileURLToPath(new URL('../../docs/sessions/02-dribbling.png',import.meta.url))});
+  await page.screenshot({path:fileURLToPath(new URL('../../.local/browser/02-dribbling.png',import.meta.url))});
 });
 
 test('shot follows the released arrow opposite to running and survives later cursor changes',async({page})=>{
@@ -160,7 +160,7 @@ test('shot follows the released arrow opposite to running and survives later cur
   expect(releases[0].aimX).toBeCloseTo(-1,5);expect(releases[0].aimY).toBeCloseTo(0,5);
   expect(launch.vx).toBeLessThan(-10);expect(Math.abs(launch.vy)).toBeLessThan(.001);
   await page.waitForTimeout(250);expect(received.at(-1)!.ball.vx).toBeLessThan(0);await expect(page.locator('#disconnect')).toBeHidden();
-  await page.screenshot({path:fileURLToPath(new URL('../../docs/sessions/02-ball-camera.png',import.meta.url))});
+  await page.screenshot({path:fileURLToPath(new URL('../../.local/browser/02-ball-camera.png',import.meta.url))});
 });
 
 test('players collide without pushing the stationary opponent',async({browser,page})=>{
