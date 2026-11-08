@@ -70,7 +70,9 @@ export class Connection {
     };
   }
   get serverTick(): number {return this.anchorTick + (performance.now() - this.anchorTime) * .06;}
-  get firstTarget(): number {return Math.floor(this.serverTick) + Math.ceil(this.rtt * .03) + 2;}
+  // Budget for the two-frame batch and a delayed render callback on phones/WebGL.
+  // Four ticks still fit the server's six-frame queue after the outbound transit.
+  get firstTarget(): number {return Math.floor(this.serverTick) + Math.ceil(this.rtt * .03) + 4;}
   ping(): void {
     const id = ++this.pingId, now = performance.now();
     if (this.pendingPings.size >= 4) {this.callbacks.status('Сервер перестал отвечать', true); this.close(); return;}

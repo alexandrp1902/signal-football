@@ -32,7 +32,7 @@ function startFrames(): void {
   if (!welcome || !prediction || !connection.synced || document.hidden || game.hidden) return;
   if (snapshot?.recipient.needsResync) resync = true;
   target = connection.firstTarget; clock.reset(); batch = []; running = true; controls.enabled = true; lastResumeMs = performance.now();
-  // The two-tick delivery budget assumes frame 1 is sampled now, not one render step later.
+  // Sample frame 1 now so the delivery budget covers batching and render scheduling.
   last = performance.now(); fixedStep();
 }
 const connection = new Connection({status, sync: startFrames,
